@@ -58,7 +58,6 @@ pipeline {
                 // Upload index.html to S3
                 sh """
                     aws s3 cp frontend/index.html s3://${BUCKET_NAME}/index.html \
-                    --acl public-read \
                     --region ${AWS_REGION}
                 """
             }
