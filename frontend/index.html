@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tipsy Wiki Fetcher</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
+        input { padding: 10px; width: 70%; font-size: 16px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #0073bb; color: white; border: none; }
+        button:hover { background: #005b96; }
+        #status { margin-top: 20px; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Wiki Fetcher</h1>
+    <p>Enter a topic to fetch from Wikipedia and save to our S3 archive.</p>
+    
+    <div>
+        <input type="text" id="topicInput" placeholder="e.g. DevOps, Python, Sushi...">
+        <button onclick="fetchWiki()">Fetch & Save</button>
+    </div>
+
+    <div id="status"></div>
+
+    <script>
+        // Your specific Lambda Function URL (Query params removed)
+        const LAMBDA_URL = "https://4awthudbehxzo23poyjtd54lcu0ouejd.lambda-url.us-east-1.on.aws/";
+
+        async function fetchWiki() {
+            const topic = document.getElementById('topicInput').value;
+            const statusDiv = document.getElementById('status');
+            
+            if (!topic) {
+                statusDiv.textContent = "Please enter a topic.";
+                statusDiv.className = "error";
+                return;
+            }
+
+            statusDiv.textContent = "Fetching...";
+            statusDiv.className = "";
+
+            try {
+                // The script appends ?topic=YOUR_INPUT here
+                const response = await fetch(`${LAMBDA_URL}?topic=${encodeURIComponent(topic)}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Server Error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                statusDiv.textContent = `Success! Check your email. Server said: "${data}"`;
+                statusDiv.className = "success";
+
+            } catch (error) {
+                console.error(error);
+                statusDiv.textContent = "Failed: " + error.message;
+                statusDiv.className = "error";
+            }
+        }
+    </script>
+</body>
+</html>
