@@ -1,0 +1,4 @@
+pytest
+boto3
+wikipedia
+urllib3<1.27

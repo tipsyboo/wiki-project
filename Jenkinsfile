@@ -26,9 +26,8 @@ pipeline {
         stage('Test Backend') {
             steps {
                 script {
-                    // Simple syntax check to satisfy "Run relevant tests" requirement
-                    sh 'python3 -m py_compile lambda/lambda_function.py'
-                    echo "Python Syntax OK!"
+                    sh 'pip3 install -r requirements-test.txt'
+                    sh 'python3 -m pytest tests/ -v'
                 }
             }
         }
