@@ -11,6 +11,8 @@ pipeline {
         
         // AWS Region
         AWS_REGION = 'us-east-1'
+
+        DISTRIBUTION_ID = 'E1SXPVZ5XDKZG4'
     }
 
     stages {
@@ -62,6 +64,19 @@ pipeline {
                 """
             }
         }
+
+        stage('Invalidate Cache') {
+            steps {
+                sh """
+                    aws cloudfront create-invalidation \
+                    --distribution-id ${DISTRIBUTION_ID} \
+                    --paths "/*" \
+                    --region ${AWS_REGION}
+                """
+            }
+        }
+        
+
     }
     
     post {
