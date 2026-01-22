@@ -3,15 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tipsy Wiki Fetcher</title>
+    <title>Tipsy Tools</title>
     <style>
         body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
         input { padding: 10px; width: 70%; font-size: 16px; border: 1px solid #ccc; border-radius: 5px; }
+        /* Specific width for file input to align better */
+        input[type="file"] { border: none; } 
         button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #0073bb; color: white; border: none; border-radius: 5px; }
         button:hover { background: #005b96; }
-        #status { margin-top: 20px; padding: 10px; border-radius: 5px; }
+        .status-box { margin-top: 20px; padding: 10px; border-radius: 5px; }
         .success { background-color: #d4edda; color: #155724; }
         .error { background-color: #f8d7da; color: #721c24; }
+        hr { margin: 40px 0; border: 0; border-top: 1px solid #eee; }
     </style>
 </head>
 <body>
@@ -23,29 +26,44 @@
         <button type="submit">Fetch & Save</button>
     </form>
 
-    <div id="status"></div>
+    <div id="status" class="status-box"></div>
+
+    <hr>
+
+    <h1>CSV to Excel Converter</h1>
+    <p>Select a CSV file to convert it to Excel format.</p>
+
+    <div>
+        <input type="file" id="csvInput" accept=".csv">
+        <button onclick="convertCsv()">Convert & Download</button>
+    </div>
+    
+    <div id="csvStatus" class="status-box"></div>
 
     <script>
-        // Your specific Lambda Function URL (Query params removed)
-        const LAMBDA_URL = "https://4awthudbehxzo23poyjtd54lcu0ouejd.lambda-url.us-east-1.on.aws/";
+        // --- CONFIGURATION ---
+        const WIKI_LAMBDA_URL = "https://4awthudbehxzo23poyjtd54lcu0ouejd.lambda-url.us-east-1.on.aws/";
+        
+        // ⚠️ REPLACE THIS WITH YOUR NEW CSV FUNCTION URL
+        const CSV_LAMBDA_URL = "https://PASTE_YOUR_CSV_URL_HERE.lambda-url.us-east-1.on.aws/";
 
+        // --- WIKI FUNCTION ---
         async function fetchWiki() {
             const topic = document.getElementById('topicInput').value;
             const statusDiv = document.getElementById('status');
             
             if (!topic) {
                 statusDiv.textContent = "Please enter a topic.";
-                statusDiv.className = "error";
+                statusDiv.className = "status-box error";
                 return;
             }
 
             document.getElementById('topicInput').value = '';
             statusDiv.textContent = "Fetching...";
-            statusDiv.className = "";
+            statusDiv.className = "status-box";
 
             try {
-                // The script appends ?topic=YOUR_INPUT here
-                const response = await fetch(`${LAMBDA_URL}?topic=${encodeURIComponent(topic)}`);
+                const response = await fetch(`${WIKI_LAMBDA_URL}?topic=${encodeURIComponent(topic)}`);
                 
                 if (!response.ok) {
                     throw new Error(`Server Error: ${response.status}`);
@@ -53,12 +71,61 @@
 
                 const data = await response.json();
                 statusDiv.textContent = `Success! Check your email. Server said: "${data}"`;
-                statusDiv.className = "success";
+                statusDiv.className = "status-box success";
 
             } catch (error) {
                 console.error(error);
                 statusDiv.textContent = "Failed: " + error.message;
-                statusDiv.className = "error";
+                statusDiv.className = "status-box error";
+            }
+        }
+
+        // --- CSV FUNCTION ---
+        async function convertCsv() {
+            const fileInput = document.getElementById('csvInput');
+            const statusDiv = document.getElementById('csvStatus');
+            
+            if (fileInput.files.length === 0) {
+                statusDiv.textContent = "Please select a file!";
+                statusDiv.className = "status-box error";
+                return;
+            }
+
+            const file = fileInput.files[0];
+            statusDiv.textContent = "Uploading and Converting...";
+            statusDiv.className = "status-box";
+            
+            try {
+                // Read the file as text
+                const text = await file.text();
+
+                // Send to Lambda
+                const response = await fetch(CSV_LAMBDA_URL, {
+                    method: 'POST',
+                    body: text
+                });
+
+                if (!response.ok) throw new Error("Conversion failed (Check Lambda Logs)");
+
+                // Convert response to Blob (Binary File)
+                const blob = await response.blob();
+                
+                // Trigger Download
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "converted_data.xlsx";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                
+                statusDiv.textContent = "Success! Download started.";
+                statusDiv.className = "status-box success";
+
+            } catch (error) {
+                console.error(error);
+                statusDiv.textContent = "Error: " + error.message;
+                statusDiv.className = "status-box error";
             }
         }
     </script>
