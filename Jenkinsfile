@@ -55,6 +55,23 @@ pipeline {
             }
         }
 
+
+        stage('Deploy CSV Converter') {
+            steps {
+                dir('lambda') {
+                    // Zip the NEW service
+                    sh 'zip -r ../csv-service.zip csv_service.py'
+                }
+                // Deploy to the NEW function name
+                sh """
+                    aws lambda update-function-code \
+                    --function-name csv-converter \
+                    --zip-file fileb://csv-service.zip \
+                    --region ${AWS_REGION}
+                """
+            }
+        }
+
         stage('Deploy Frontend (S3)') {
             steps {
                 // Upload index.html to S3
